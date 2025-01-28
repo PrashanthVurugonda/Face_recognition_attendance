@@ -2,22 +2,24 @@ import cv2
 import pickle
 import numpy as np
 import os
+import sys
 
-# Initialize video capture and face detector
-video = cv2.VideoCapture(0)
+# Initialize face detector
 facedetect = cv2.CascadeClassifier('data/haarcascade_frontalface_default.xml')
 
-# Create the 'data' directory if it doesn't exist
-if not os.path.exists('data'):
-    os.makedirs('data')
-
 def collect_faces(name, roll_no, dept_name):
+    # Initialize video capture
+    video = cv2.VideoCapture(0)
     faces_data = []
     i = 0
-    print(f"Collecting face data for {name}...")
+    print(f"Collecting face data for {name} (Roll No: {roll_no}, Dept: {dept_name})...")
 
     while True:
         ret, frame = video.read()
+        if not ret:
+            print("Failed to access the camera.")
+            break
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = facedetect.detectMultiScale(gray, 1.3, 5)
         for (x, y, w, h) in faces:
@@ -33,18 +35,22 @@ def collect_faces(name, roll_no, dept_name):
         k = cv2.waitKey(1)
         if k == ord('q') or len(faces_data) == 100:
             break
-    
+
     faces_data = np.asarray(faces_data)
     faces_data = faces_data.reshape(100, -1)
-    
-    # Save face data and user info (name, roll number, department)
+
+    # Save face data
     save_data(name, roll_no, dept_name, faces_data)
     print(f"Face data collection complete for {name}.")
-    
-    return
+
+    # Properly release video capture and close OpenCV windows
+    video.release()
+    cv2.destroyAllWindows()
 
 def save_data(name, roll_no, dept_name, faces_data):
-    # Save names, faces_data, roll numbers, and department names
+    if not os.path.exists('data'):
+        os.makedirs('data')
+    
     if not os.path.exists('data/names.pkl'):
         names = [name] * 100
         roll_numbers = [roll_no] * 100
@@ -70,20 +76,13 @@ def save_data(name, roll_no, dept_name, faces_data):
         with open('data/faces_data.pkl', 'wb') as f:
             pickle.dump(faces, f)
 
-def main():
-    while True:
-        name = input("Enter Your Name (or type 'exit' to stop): ")
-        if name.lower() == 'exit':
-            break
-        
-        roll_no = input("Enter Your Roll Number: ")
-        dept_name = input("Enter Your Department Name: ")
-        
-        # Collect face data for the entered user
-        collect_faces(name, roll_no, dept_name)
-    
-    video.release()
-    cv2.destroyAllWindows()
-
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 4:
+        print("Usage: python add_faces.py <name> <roll_no> <dept_name>")
+        sys.exit(1)
+
+    name = sys.argv[1]
+    roll_no = sys.argv[2]
+    dept_name = sys.argv[3]
+
+    collect_faces(name, roll_no, dept_name)
