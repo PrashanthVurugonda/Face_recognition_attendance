@@ -16,6 +16,7 @@ def load_data():
     return {}
 
 def save_data(data):
+    os.makedirs('data', exist_ok=True)
     with open('data/user_credentials.json', 'w') as f:
         json.dump(data, f)
 
@@ -30,6 +31,7 @@ def load_attendance_data(date):
 def save_appeal(roll_no, appeal):
     appeals = load_appeals()
     appeals[roll_no] = appeal
+    os.makedirs('data', exist_ok=True)
     with open('data/appeals.json', 'w') as f:
         json.dump(appeals, f)
 
@@ -70,6 +72,7 @@ def admin_page():
 
     username = st.text_input("Enter Username")
     roll_no = st.text_input("Enter Roll No./EMP ID")
+    department = st.text_input("Enter Department Name")
     password = st.text_input("Enter Password", type='password')
     role = st.selectbox("Select Role", ['student', 'teacher', 'H.O.D'])
 
@@ -77,6 +80,7 @@ def admin_page():
         user_data = load_data()
         user_data[username] = {
             "roll_no": roll_no,
+            "department": department,
             "password": password,
             "role": role
         }
@@ -85,11 +89,9 @@ def admin_page():
 
     if role == 'student':
         if st.button("Capture Face", key="capture_face_button"):
-            subprocess.Popen(["python", r"C:/Users/vurug/OneDrive/Desktop/Face recog/add_faces.py"])
-    elif role == 'teacher':
-        subject = st.text_input("Enter Subject")
-        if subject:
-            st.success(f"Subject {subject} added for {username}.")
+            # Replace with the appropriate path to your `add_faces.py` file
+            script_path = r"C:/Users/vurug/OneDrive/Desktop/Face recog/add_faces.py"
+            subprocess.Popen(["python", script_path, username, roll_no, department])
 
 # Teacher page
 def teacher_page(username):
@@ -101,47 +103,9 @@ def teacher_page(username):
         st.success(f"Working days declared: {working_days}")
 
     if st.button("Capture Attendance", key="capture_attendance_button"):
-        subprocess.Popen(["python", r"C:/Users/vurug/OneDrive\Desktop/Face recog/test.py"])
-
-    # Implement editing attendance logic here
-    roll_no = st.text_input("Enter Roll No. to Edit Attendance")
-    new_attendance_status = st.selectbox("Select Attendance Status", ['Present', 'Absent'])
-    if st.button("Edit Attendance", key="edit_attendance_button"):
-        today_date = pd.to_datetime("today").strftime("%d-%m-%Y")
-        attendance_data = load_attendance_data(today_date)
-        if attendance_data is not None:
-            index = attendance_data[attendance_data['ROLL_NO'] == roll_no].index
-            if len(index) > 0:
-                attendance_data.at[index[0], 'ATTENDANCE'] = new_attendance_status
-                attendance_data.to_csv(f"Attendance/Attendance_{today_date}.csv", index=False)
-                st.success(f"Attendance for Roll No. {roll_no} updated to {new_attendance_status}.")
-            else:
-                st.error("Roll number not found.")
-        else:
-            st.error("No attendance data found for today.")
-
-    # Implement absent marking logic here
-    absent_roll_no = st.text_input("Enter Roll No. to Mark Absent")
-    if st.button("Mark Absent", key="mark_absent_button"):
-        today_date = pd.to_datetime("today").strftime("%d-%m-%Y")
-        attendance_data = load_attendance_data(today_date)
-        if attendance_data is not None:
-            if absent_roll_no in attendance_data['ROLL_NO'].values:
-                attendance_data = attendance_data[attendance_data['ROLL_NO'] != absent_roll_no]
-                attendance_data.to_csv(f"Attendance/Attendance_{today_date}.csv", index=False)
-                st.success(f"Roll No. {absent_roll_no} marked as absent.")
-            else:
-                st.error("Roll number not found in today's attendance.")
-        else:
-            st.error("No attendance data found for today.")
-
-    # Display appeals and notifications
-    st.sidebar.subheader("Notifications")
-    appeals = load_appeals()
-    if appeals:
-        st.sidebar.text("Student Appeals:")
-        for roll_no, appeal in appeals.items():
-            st.sidebar.text(f"Roll No: {roll_no}, Appeal: {appeal}")
+        # Replace with the appropriate path to your attendance capture script
+        script_path = r"C:/Users/vurug/OneDrive/Desktop/Face recog/test.py"
+        subprocess.Popen(["python", script_path])
 
 # H.O.D page
 def hod_page():
